@@ -23,7 +23,7 @@
 #define DAP_JTAG                0               ///< JTAG Mode: 1 = available, 0 = not available.
 #define DAP_JTAG_DEV_CNT        0               ///< Maximum number of JTAG devices on scan chain
 #define DAP_DEFAULT_PORT        1               ///< Default JTAG/SWJ Port Mode: 1 = SWD, 2 = JTAG.
-#define DAP_DEFAULT_SWJ_CLOCK   50000000         ///< Default SWD/JTAG clock frequency in Hz.
+#define DAP_DEFAULT_SWJ_CLOCK   4000000U        ///< Default SWD/JTAG clock frequency in Hz.
 #define IO_PORT_WRITE_CYCLES    2               ///< I/O Cycles: 2=default, 1=Cortex-M0+ fast I/0
 
 /// Maximum Package Size for Command and Response data.
@@ -70,19 +70,19 @@
 #endif
 
 #ifndef CONFIG_ESP_SWD_CLK_PIN
-#define PIN_SWCLK   1
+#define PIN_SWCLK   16
 #else
 #define PIN_SWCLK   CONFIG_ESP_SWD_CLK_PIN
 #endif
 
 #ifndef CONFIG_ESP_SWD_IO_PIN
-#define PIN_SWDIO   2
+#define PIN_SWDIO   15
 #else
 #define PIN_SWDIO   CONFIG_ESP_SWD_IO_PIN
 #endif
 
 #ifndef CONFIG_ESP_SWD_NRST_PIN
-#define PIN_nRST    6
+#define PIN_nRST    17
 #else
 #define PIN_nRST   CONFIG_ESP_SWD_NRST_PIN
 #endif
@@ -91,6 +91,12 @@
 #define PIN_LED     3
 #else
 #define PIN_SWDIO   CONFIG_ESP_SWD_LED_PIN
+#endif
+
+#ifndef CONFIG_ESP_SWD_BOOT_PIN
+#define CONFIG_ESP_SWD_BOOT_PIN     7
+#else
+#define CONFIG_ESP_SWD_BOOT_PIN   CONFIG_ESP_SWD_BOOT_PIN
 #endif
 
 
@@ -231,11 +237,18 @@ static __always_inline void PIN_nRESET_OUT(uint32_t bit)
     }
 }
 
-#include "../../../esp_timer/private_include/esp_timer_impl.h"
+//#include "../../../esp_timer/private_include/esp_timer_impl.h"
+//
+//static __always_inline uint32_t TIMESTAMP_GET()
+//{
+//    return esp_timer_impl_get_counter_reg();
+//}
 
-static __always_inline uint32_t TIMESTAMP_GET()
+#include <esp_timer.h>
+
+static inline uint32_t TIMESTAMP_GET()
 {
-    return esp_timer_impl_get_counter_reg();
+    return (uint32_t)esp_timer_get_time();  // microseconds since boot
 }
 
 static inline void DAP_SETUP(void)
