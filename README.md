@@ -1,51 +1,46 @@
 # SWD Driver for ESP32
 
+This repo is a clone of https://github.com/huming2207/swd-esp with minimal changes to work as an Arduino library. It's tested with the ESP v3.2.0 and Arduino v2.3.6.
+
 A dirty port of ARM DAPLink
 
-For ESP32-S2/S3 only, currently tested on ESP32-S2
+For ESP32-S2/S3 only, currently tested on ESP32-S3
 
 ## Usage
 
-target is a STM32L031K6, writing 8KB of 0x5a to RAM:
+Target is a STM32F103, reading the IDCODE:
 
 ```c
-#include <stdio.h>
-#include <string.h>
 #include <swd_host.h>
-#include <esp_log.h>
-#include <esp_timer.h>
 
-void app_main(void)
-{
-    static const char *TAG = "main";
-    ESP_LOGI(TAG, "Lay hou from DAPLink!");
+#define CONFIG_ESP_SWD_CLK_PIN 16
+#define CONFIG_ESP_SWD_IO_PIN 15
+#define CONFIG_ESP_SWD_NRST_PIN 17
 
-    swd_init_debug();
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("Starting SWD...");
 
-    uint32_t idcode = 0;
-    uint8_t ret = swd_read_idcode(&idcode);
+  // Set SWD pins
+  //swd_set_pins(SWDIO_PIN, SWCLK_PIN);
 
-    ESP_LOGI(TAG, "IDCode readout is: 0x%x, ret: %u", idcode, ret);
+  // Initialize SWD interface
+  swd_init_debug();
 
-    uint8_t *buf = malloc(8192);
-    memset(buf, 0x5a, 8192);
+  uint32_t idcode = 0;
+  if (swd_read_idcode(&idcode)) {
+    Serial.print("IDCODE: 0x");
+    Serial.println(idcode, HEX);
+  } else {
+    Serial.println("Failed to read IDCODE.");
+  }
 
-    int64_t start_ts = esp_timer_get_time();
-    ret = swd_write_memory(0x20000000, buf, 8192);
-    ESP_LOGI(TAG, "Wrote 8KB used %lld us, ret %u", esp_timer_get_time() - start_ts, ret);
+  // Optionally halt the core before reading memory
+  //swd_halt_target();
+  //swd_wait_until_halted();
 }
 
-```
-
-Log output:
-
-```
-I (495) main: Lay hou from DAPLink!
-I (505) main: IDCode readout is: 0xbc11477, ret: 1
-I (535) main: Wrote 8KB used 24842 us, ret 1
-```
-
-## License 
-
-MIT
-
+void loop() {
+  // Nothing to do here
+}
